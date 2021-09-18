@@ -8,14 +8,13 @@ export enum LogType {
   EnemyEntityKilled = 0,
   StructureDemolishedByEnemy,
   DinoStarvedToDeath,
+  FriendlyLivingEntityKilled,
 }
 
 export default function getValidLogsFrom(logText: string): TribeLog[] {
   const tribeLogs: TribeLog[] = getTimeRelatedInfoFromLogs(
     divideIntoIndividualLogs(logText)
   );
-
-  let regex = XRegExp('([Yyour]{4,5})');
 
   let str = '';
   let currentLog: TribeLog;
@@ -24,7 +23,7 @@ export default function getValidLogsFrom(logText: string): TribeLog[] {
   for (let logIndex = 0; logIndex < tribeLogs.length; logIndex++) {
     currentLog = tribeLogs[logIndex];
     str = currentLog.text;
-    let match = regex.exec(str);    
+    let match = XRegExp('([Yyour]{4,5})').exec(str);   
     if (match !== null) { // Starts with "Your"
       str = str.substring(match[0].length);      
       match = XRegExp('([Ttribe RKkilled]{13})').exec(str);
@@ -42,13 +41,19 @@ export default function getValidLogsFrom(logText: string): TribeLog[] {
             str = str.substring(0, str.length - match[0].length);
             logType = LogType.DinoStarvedToDeath;          
           } else { // Error
-            console.log(`Your->!was destroyed->!starved to death: ${str}`);
-            logType = LogType.InvalidLog;
+            match = XRegExp('([was killed!]{8,13}$)').exec(str);
+            if (match !== null) {
+              str = str.substring(0, str.length - match[0].length);
+              logType = LogType.FriendlyLivingEntityKilled;
+            } else {
+              console.log(`Your->!was destroyed->!starved to death->!was killed: ${str}`);
+              logType = LogType.InvalidLog;
+            }
           }
         }
       }    
     } else { // Does not start with "Your"
-      console.log(`Some other log not supported: ${str}`);
+      console.log(`\nLog not supported: ${str}`);
       logType = LogType.InvalidLog;
     }
     currentLog.text = str.trim();
