@@ -4,6 +4,7 @@ import { divideIntoIndividualLogs, getTimeRelatedInfoFromLogs } from "./util";
 import XRegExp from "xregexp";
 
 export enum LogType {
+  InvalidLog = -1,
   EnemyEntityKilled = 0,
   StructureDemolishedByEnemy,
   DinoStarvedToDeath,
@@ -42,13 +43,13 @@ export default function getValidLogsFrom(logText: string): TribeLog[] {
             logType = LogType.DinoStarvedToDeath;          
           } else { // Error
             console.log("err");
-            currentLog = null;
+            logType = LogType.InvalidLog;
           }
         }
       }    
     } else { // Does not start with "Your"
       console.log("Some other log not supported...");
-      currentLog = null;
+      logType = LogType.InvalidLog;
     }
     currentLog.text = str.trim();
     currentLog.logType = logType;
