@@ -9,6 +9,7 @@ export enum LogType {
   StructureDemolishedByEnemy,
   DinoStarvedToDeath,
   FriendlyLivingEntityKilled,
+  AutoDecayDestroyed
 }
 
 export default function getValidLogsFrom(logText: string): TribeLog[] {
@@ -46,8 +47,14 @@ export default function getValidLogsFrom(logText: string): TribeLog[] {
               str = str.substring(0, str.length - match[0].length);
               logType = LogType.FriendlyLivingEntityKilled;
             } else {
-              console.log(`Your->!was destroyed->!starved to death->!was killed: ${str}`);
-              logType = LogType.InvalidLog;
+              match = XRegExp('([was auto\\-decay destroyed!]{14,26}$)').exec(str);
+              if (match !== null) {
+                str = str.substring(0, str.length - match[0].length);
+                logType = LogType.AutoDecayDestroyed;
+              } else {
+                console.log(`Your->!was destroyed->!starved to death->!was killed->was auto-decay destroyed: ${str}`);
+                logType = LogType.InvalidLog;
+              }              
             }
           }
         }
