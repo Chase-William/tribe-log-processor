@@ -47,7 +47,7 @@ export default function getValidLogsFrom(logText: string): TribeLog[] {
               str = str.substring(0, str.length - match[0].length);
               logType = LogType.FriendlyLivingEntityKilled;
             } else {
-              match = XRegExp('([was auto\\-decay destroyed!]{14,26}$)').exec(str);
+              match = XRegExp('([vwasauto\\-decay destroyed!]{14,26}$)').exec(str);
               if (match !== null) {
                 str = str.substring(0, str.length - match[0].length);
                 logType = LogType.AutoDecayDestroyed;
