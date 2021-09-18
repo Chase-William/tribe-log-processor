@@ -24,7 +24,7 @@ export default function getValidLogsFrom(logText: string): TribeLog[] {
   for (let logIndex = 0; logIndex < tribeLogs.length; logIndex++) {
     currentLog = tribeLogs[logIndex];
     str = currentLog.text;
-    let match = XRegExp('([Yyour]{4,5})').exec(str);   
+    let match = XRegExp('([VYyour]{4,5})').exec(str);   
     if (match !== null) { // Starts with "Your"
       str = str.substring(match[0].length);      
       match = XRegExp('([Ttribe RKkilled]{13})').exec(str);
@@ -47,7 +47,7 @@ export default function getValidLogsFrom(logText: string): TribeLog[] {
               str = str.substring(0, str.length - match[0].length);
               logType = LogType.FriendlyLivingEntityKilled;
             } else {
-              match = XRegExp('([vwasauto\\-decay destroyed!]{14,26}$)').exec(str);
+              match = XRegExp('([_vwasauto\\-decay destroyed!]{14,26}$)').exec(str);
               if (match !== null) {
                 str = str.substring(0, str.length - match[0].length);
                 logType = LogType.AutoDecayDestroyed;
