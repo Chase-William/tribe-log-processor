@@ -1,0 +1,22 @@
+{
+  "name": "tribe-log-processor",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc --build",
+    "test": "npm run build && node test.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "fuzzy-phrase-classifier": "^1.1.1",
+    "xregexp": "^5.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^16.9.2",
+    "fs": "^0.0.1-security",
+    "typescript": "^4.4.3"
+  }
+}
