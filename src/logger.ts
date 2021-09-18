@@ -26,7 +26,7 @@ export default function getValidLogsFrom(logText: string) {
     let match = regex.exec(str);    
     if (match !== null) { // Starts with "Your"
       str = str.substring(match[0].length);      
-      match = XRegExp('([Ttribe Kkilled]{13})').exec(str);
+      match = XRegExp('([Ttribe RKkilled]{13})').exec(str);
       if (match !== null) { // Starts with "Your tribe killed"
         // console.log(str.substring(match[0].length));
         str = str.substring(match[0].length);
