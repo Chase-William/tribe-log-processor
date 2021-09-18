@@ -1,11 +1,9 @@
-import { Phraseable } from 'fuzzy-phrase-classifier';
+import { LogType } from './logger';
 
-export default class TribeLog implements Phraseable {
+export default class TribeLog {
   text: string = '';
 
-  score = 0;
-
-  bestFitPhrase = '';
+  logType: LogType;
 
   inGameDay: number;
 

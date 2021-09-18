@@ -25,18 +25,6 @@ fs@^0.0.1-security:
   resolved "https://registry.yarnpkg.com/fs/-/fs-0.0.1-security.tgz#8a7bd37186b6dddf3813f23858b57ecaaf5e41d4"
   integrity sha1-invTcYa23d84E/I4WLV+yq9eQdQ=
 
-fuse.js@^6.4.6:
-  version "6.4.6"
-  resolved "https://registry.yarnpkg.com/fuse.js/-/fuse.js-6.4.6.tgz#62f216c110e5aa22486aff20be7896d19a059b79"
-  integrity sha512-/gYxR/0VpXmWSfZOIPS3rWwU8SHgsRTwWuXhyb2O6s7aRuVtHtxCkR33bNYu3wyLyNx/Wpv0vU7FZy8Vj53VNw==
-
-fuzzy-phrase-classifier@^1.1.1:
-  version "1.1.1"
-  resolved "https://registry.yarnpkg.com/fuzzy-phrase-classifier/-/fuzzy-phrase-classifier-1.1.1.tgz#4589190d3bb28d256469c0695b931d2221d9ef56"
-  integrity sha512-muiVGahXvoSTxkr++fvGzGUSN1ES6kierBcqsPUFSuJpM0vZ1p3OaSItOV5a6dXmlpT6Sp+vLOhyIdNDn9qz6Q==
-  dependencies:
-    fuse.js "^6.4.6"
-
 regenerator-runtime@^0.13.4:
   version "0.13.9"
   resolved "https://registry.yarnpkg.com/regenerator-runtime/-/regenerator-runtime-0.13.9.tgz#8925742a98ffd90814988d7566ad30ca3b263b52"
