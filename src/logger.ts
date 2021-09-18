@@ -42,13 +42,13 @@ export default function getValidLogsFrom(logText: string): TribeLog[] {
             str = str.substring(0, str.length - match[0].length);
             logType = LogType.DinoStarvedToDeath;          
           } else { // Error
-            console.log("err");
+            console.log(`Your->!was destroyed->!starved to death: ${str}`);
             logType = LogType.InvalidLog;
           }
         }
       }    
     } else { // Does not start with "Your"
-      console.log("Some other log not supported...");
+      console.log(`Some other log not supported: ${str}`);
       logType = LogType.InvalidLog;
     }
     currentLog.text = str.trim();
