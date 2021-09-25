@@ -23,33 +23,37 @@ export default function getValidLogsFrom(logText: string): TribeLog[] {
   // At each index we want get and determine the type of log aka what it means
   for (let logIndex = 0; logIndex < tribeLogs.length; logIndex++) {
     currentLog = tribeLogs[logIndex];
-    str = currentLog.text;
-    let match = XRegExp('([VYyour]{4,5})').exec(str);   
-    if (match !== null) { // Starts with "Your"
-      str = str.substring(match[0].length);      
-      match = XRegExp('([Ttribe RKkilled]{13})').exec(str);
-      if (match !== null) { // Starts with "Your tribe killed"
-        str = str.substring(match[0].length);
+    str = currentLog.text.trim();
+    let match = XRegExp('(?i)^(your|Vour)').exec(str);
+    console.log(str);
+    console.log(match);
+    if (match !== null) { // Starts with "your" or "Your" or "Vour"
+      
+      str = str.substring(match[0].length).trimStart();      
+      match = XRegExp('(?i)(Tribe Killed)').exec(str);
+      if (match !== null) { // After 5 character offset, starts with case insensitive "Tribe killed"
+        console.log(match);
+        str = str.substring(match[0].length).trimStart();
         logType = LogType.EnemyEntityKilled; 
-      } else { // Does not start with "Your tribe killed"
-        match = XRegExp('([was destroyed!]{15}$)').exec(str);
+      } else { // Starts with matches failed, now try ends with
+        match = XRegExp('(?i)(was destroyed.$)').exec(str);
         if (match !== null) { // Ends with "was destroyed!"
-          str = str.substring(0, str.length - match[0].length); 
+          str = str.substring(0, str.length - match[0].length).trimEnd(); 
           logType = LogType.StructureDemolishedByEnemy; 
         } else { // Does not end with "was destroyed!"
-          match = XRegExp('([starved todeath!]{12,18}$)').exec(str);
+          match = XRegExp('(?i)(starved to death.$)').exec(str);
           if (match !== null) { // Ends with "starved to death!"
-            str = str.substring(0, str.length - match[0].length);
+            str = str.substring(0, str.length - match[0].length).trimEnd();
             logType = LogType.DinoStarvedToDeath;          
           } else { // Error
-            match = XRegExp('([was killed!]{8,13}$)').exec(str);
-            if (match !== null) {
-              str = str.substring(0, str.length - match[0].length);
+            match = XRegExp('(?i)(was killed.$)').exec(str);
+            if (match !== null) { // Ends with "was killed!"
+              str = str.substring(0, str.length - match[0].length).trimEnd();
               logType = LogType.FriendlyLivingEntityKilled;
             } else {
-              match = XRegExp('([_vwasauto\\-decay destroyed!]{14,26}$)').exec(str);
-              if (match !== null) {
-                str = str.substring(0, str.length - match[0].length);
+              match = XRegExp('(?i)(was auto-decay destroyed.$)').exec(str);
+              if (match !== null) { // Ends with "auto-decay destroyed"
+                str = str.substring(0, str.length - match[0].length).trimEnd();
                 logType = LogType.AutoDecayDestroyed;
               } else {
                 console.log(`Your->!was destroyed->!starved to death->!was killed->was auto-decay destroyed: ${str}`);
