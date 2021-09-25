@@ -4,7 +4,8 @@ import { divideIntoIndividualLogs, getTimeRelatedInfoFromLogs } from "./util";
 import XRegExp from "xregexp";
 
 export enum LogType {
-  InvalidLog = -1,
+  Invalid = -2,
+  NotSupported = -1,  
   EnemyEntityKilled = 0,
   StructureDemolishedByEnemy,
   DinoStarvedToDeath,
@@ -25,14 +26,10 @@ export default function getValidLogsFrom(logText: string): TribeLog[] {
     currentLog = tribeLogs[logIndex];
     str = currentLog.text.trim();
     let match = XRegExp('(?i)^(your|Vour)').exec(str);
-    console.log(str);
-    console.log(match);
-    if (match !== null) { // Starts with "your" or "Your" or "Vour"
-      
+    if (match !== null) { // Starts with "your" or "Your" or "Vour"      
       str = str.substring(match[0].length).trimStart();      
       match = XRegExp('(?i)(Tribe Killed)').exec(str);
-      if (match !== null) { // After 5 character offset, starts with case insensitive "Tribe killed"
-        console.log(match);
+      if (match !== null) { // After 5 character offset, starts with case insensitive "Tribe killed"        
         str = str.substring(match[0].length).trimStart();
         logType = LogType.EnemyEntityKilled; 
       } else { // Starts with matches failed, now try ends with
@@ -56,16 +53,16 @@ export default function getValidLogsFrom(logText: string): TribeLog[] {
                 str = str.substring(0, str.length - match[0].length).trimEnd();
                 logType = LogType.AutoDecayDestroyed;
               } else {
-                console.log(`Your->!was destroyed->!starved to death->!was killed->was auto-decay destroyed: ${str}`);
-                logType = LogType.InvalidLog;
+                // console.log(`Your->!was destroyed->!starved to death->!was killed->was auto-decay destroyed: ${str}`);
+                logType = LogType.Invalid;
               }              
             }
           }
         }
       }    
     } else { // Does not start with "Your"
-      console.log(`\nLog not supported: ${str}`);
-      logType = LogType.InvalidLog;
+      // console.log(`\nLog not supported: ${str}`);
+      logType = LogType.NotSupported;
     }
     currentLog.text = str.trim();
     currentLog.logType = logType;
