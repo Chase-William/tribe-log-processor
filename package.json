@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "init": "yarn && yarn run build",
     "build": "tsc --build",
     "test": "yarn build && node test.js"
   },
