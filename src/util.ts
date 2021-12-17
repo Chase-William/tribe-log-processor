@@ -1,5 +1,5 @@
 import XRegExp from 'xregexp';
-import TribeLog from './tribeLog';
+import TribeLog, { OccurrenceType } from './tribeLog';
 
 /*
   This constant helps remove small useless strings only containing jibberish.
@@ -12,6 +12,16 @@ const IN_GAME_DAY_INDEX = 2;
 const IN_GAME_HOUR_DAY_INDEX = 3;
 const IN_GAME_MINUTE_DAY_INDEX = 4;
 const IN_GAME_SECOND_DAY_INDEX = 5;
+
+export enum LogType {
+  Invalid = -2,
+  NotSupported = -1,  
+  EnemyEntityKilled = 0,
+  StructureDestroyedByEnemy,
+  DinoStarvedToDeath,
+  FriendlyLivingEntityKilled,
+  AutoDecayDestroyed
+}
 
 /**
  * Patches a character to the corresponding string representation of the number. Will
@@ -166,4 +176,86 @@ export function splitLogs(tribeLogText: string): string[] {
   }
 
   return refinedLogs;
+}
+
+/**
+ * Checks to see if the timestamp on this log makes sense according to the ones around it.
+ * @param log Log to be compared with.
+ * @param index Index of the log.
+ * @param srcCol Collection of logs that will be used as the context.
+ * @returns True if the given log matches its context, false otherwise.
+ */
+export function logFitsTimeContext(log: TribeLog, index: number, srcCol: TribeLog[]): boolean {
+  let prev = OccurrenceType.SameTime; // should be 1 or 0
+  let next = OccurrenceType.SameTime; // should be -1 or 0
+  if (index - 1 > 0) {
+    prev = log.compareDateTo(srcCol[index - 1]);
+  }
+  if (index + 1 < srcCol.length) {
+    next = log.compareDateTo(srcCol[index + 1])
+  }    
+  if (
+      prev === OccurrenceType.SameTime || // Happened at the sametime as the previous
+      next === OccurrenceType.SameTime || // Happened at the sametime as the next
+      // (Descending order) make sure the previous log happened after this and the next happened before        
+      (prev === OccurrenceType.After && next === OccurrenceType.Before)
+    )
+    return true;    
+  return false;    
+}
+
+export function getValidLogsFrom(logText: string): TribeLog[] {
+  const tribeLogs: TribeLog[] = getTimeInfoFromLogs(
+    splitLogs(logText)
+  );
+
+  let str = '';
+  let currentLog: TribeLog;
+  let logType: LogType;
+  // At each TribeLog we want get and determine the type of log aka what it means
+  for (const log of tribeLogs) {
+    currentLog = log;
+    str = currentLog.text.trim();
+    let match = XRegExp('(?i)^(.?[YyVv]{1}[0Oo]{1}ur)').exec(str);
+    if (match !== null) { // Starts with "your" or "Your" or "Vour"      
+      str = str.substring(match[0].length).trimStart();      
+      match = XRegExp('(?i)(Tribe Killed)').exec(str);
+      if (match !== null) { // After 5 character offset, starts with case insensitive "Tribe killed"        
+        str = str.substring(match[0].length).trimStart();
+        logType = LogType.EnemyEntityKilled; 
+      } else { // Starts with matches failed, now try ends with
+        match = XRegExp('(?i)(was destroyed.$)').exec(str);
+        if (match !== null) { // Ends with "was destroyed!"
+          str = str.substring(0, str.length - match[0].length).trimEnd(); 
+          logType = LogType.StructureDestroyedByEnemy; 
+        } else { // Does not end with "was destroyed!"
+          match = XRegExp('(?i)(star?v?ed to dea?th.$)').exec(str);
+          if (match !== null) { // Ends with "starved to death!"
+            str = str.substring(0, str.length - match[0].length).trimEnd();
+            logType = LogType.DinoStarvedToDeath;          
+          } else { // Error
+            match = XRegExp('(?i)(was killed.$)').exec(str);
+            if (match !== null) { // Ends with "was killed!"
+              str = str.substring(0, str.length - match[0].length).trimEnd();
+              logType = LogType.FriendlyLivingEntityKilled;
+            } else {
+              match = XRegExp('(?i)(was auto-decay destroyed.$)').exec(str);
+              if (match !== null) { // Ends with "auto-decay destroyed"
+                str = str.substring(0, str.length - match[0].length).trimEnd();
+                logType = LogType.AutoDecayDestroyed;
+              } else {
+                logType = LogType.Invalid;
+              }              
+            }
+          }
+        }
+      }    
+    } else { // Does not start with "Your"
+      logType = LogType.NotSupported;
+    }
+    currentLog.text = str.trim();
+    currentLog.logType = logType;
+  }  
+
+  return tribeLogs;
 }

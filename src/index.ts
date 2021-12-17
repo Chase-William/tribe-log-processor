@@ -1,70 +1,57 @@
-import TribeLog from "./tribeLog";
-import { splitLogs, getTimeInfoFromLogs } from "./util";
+import TribeLog from './tribeLog';
+import { getValidLogsFrom, LogType, logFitsTimeContext } from "./util";
 
-import XRegExp from "xregexp";
+/**
+ * A LogCollection class manages the existing logs and new logs integration. It stores
+ * unqiue logs and will weed out redundent logs using timestamps to create a normalized collection.
+ */
+export default class LogCollectionManager {
+  MIN_COL_SIZE = 75;
 
-export enum LogType {
-  Invalid = -2,
-  NotSupported = -1,  
-  EnemyEntityKilled = 0,
-  StructureDestroyedByEnemy,
-  DinoStarvedToDeath,
-  FriendlyLivingEntityKilled,
-  AutoDecayDestroyed
-}
+  /**
+   * Contains all the valid logs up to the length specified in the contructor.
+   * The term `valid` means the logs have a timestamp and have a known meaning.
+   */
+  ValidLogs = new Map<string, TribeLog>();
 
-export default function getValidLogsFrom(logText: string): TribeLog[] {
-  const tribeLogs: TribeLog[] = getTimeInfoFromLogs(
-    splitLogs(logText)
-  );
+  /**
+   * Initializes a new instance of the LogCollectionManger class.
+   * @param maxValidLen Max length of the *validLogs* collection.
+   * @param maxInvalidLen Max length of the *invalidLogs* collection.
+   * @param maxNotSupportedLen Max length of the *notSupportedLogs* collection.
+   */
+  constructor(maxValidLen: number) {
+    if (maxValidLen < this.MIN_COL_SIZE) {
+      throw new Error("A specified length for a collection inside LogCollectionManager was below the min value.");
+    }    
+  }
 
-  let str = '';
-  let currentLog: TribeLog;
-  let logType: LogType;
-  // At each TribeLog we want get and determine the type of log aka what it means
-  for (const log of tribeLogs) {
-    currentLog = log;
-    str = currentLog.text.trim();
-    let match = XRegExp('(?i)^(.?[YyVv]{1}[0Oo]{1}ur)').exec(str);
-    if (match !== null) { // Starts with "your" or "Your" or "Vour"      
-      str = str.substring(match[0].length).trimStart();      
-      match = XRegExp('(?i)(Tribe Killed)').exec(str);
-      if (match !== null) { // After 5 character offset, starts with case insensitive "Tribe killed"        
-        str = str.substring(match[0].length).trimStart();
-        logType = LogType.EnemyEntityKilled; 
-      } else { // Starts with matches failed, now try ends with
-        match = XRegExp('(?i)(was destroyed.$)').exec(str);
-        if (match !== null) { // Ends with "was destroyed!"
-          str = str.substring(0, str.length - match[0].length).trimEnd(); 
-          logType = LogType.StructureDestroyedByEnemy; 
-        } else { // Does not end with "was destroyed!"
-          match = XRegExp('(?i)(star?v?ed to dea?th.$)').exec(str);
-          if (match !== null) { // Ends with "starved to death!"
-            str = str.substring(0, str.length - match[0].length).trimEnd();
-            logType = LogType.DinoStarvedToDeath;          
-          } else { // Error
-            match = XRegExp('(?i)(was killed.$)').exec(str);
-            if (match !== null) { // Ends with "was killed!"
-              str = str.substring(0, str.length - match[0].length).trimEnd();
-              logType = LogType.FriendlyLivingEntityKilled;
-            } else {
-              match = XRegExp('(?i)(was auto-decay destroyed.$)').exec(str);
-              if (match !== null) { // Ends with "auto-decay destroyed"
-                str = str.substring(0, str.length - match[0].length).trimEnd();
-                logType = LogType.AutoDecayDestroyed;
-              } else {
-                logType = LogType.Invalid;
-              }              
-            }
-          }
+  /**
+   * Gets and then applies the logs from the text to the correct collection.
+   * @param logText Blob of text to be used as the tribe log source.
+   */
+  applyLogText(logText: string): void {
+    this.applyLogs(getValidLogsFrom(logText));
+  }
+
+  /**
+   * Applies the tribe logs given to the correct collection.
+   * @param logs Tribe logs to be applied to the correct collection.
+   */
+  applyLogs(logs: TribeLog[]): void {    
+    let log: TribeLog;
+    let tribeLogID;
+    for(let logIndex = 0; logIndex < logs.length; logIndex++) {
+      log = logs[logIndex];
+      if (logs[logIndex].logType > LogType.NotSupported) {
+        // Only process this log if it hasn't already been accounted for
+        tribeLogID = log.getTribeLogID();
+        if (!this.ValidLogs.has(tribeLogID)) {
+          // Check the log's nearbly logs to see if the time of this logic makes sense
+          if (logFitsTimeContext(log, logIndex, logs))
+            this.ValidLogs.set(tribeLogID, log); // Apply valid log to map
         }
-      }    
-    } else { // Does not start with "Your"
-      logType = LogType.NotSupported;
+      }
     }
-    currentLog.text = str.trim();
-    currentLog.logType = logType;
   }  
-
-  return tribeLogs;
 }

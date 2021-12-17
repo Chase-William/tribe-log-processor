@@ -1,4 +1,4 @@
-import { LogType } from '.';
+import { LogType } from "./util";
 
 export default class TribeLog {
   text: string = '';

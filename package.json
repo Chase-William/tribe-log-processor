@@ -5,8 +5,7 @@
   "main": "index.js",
   "scripts": {
     "build": "tsc --build",
-    "test": "yarn build && node test-getValidLogsFrom.js",
-    "test-col": "yarn build && node test-logCol.js"
+    "test": "yarn build && node test.js"
   },
   "keywords": [],
   "author": "",
