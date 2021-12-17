@@ -32,7 +32,7 @@ export default class TribeLog {
     this.realLifeTimeStamp = Date.now();
   }
 
-  getTribeLogHash(): string {
+  getTribeLogID(): string {
     return `${this.inGameDay}-${this.inGameHour}-${this.inGameMinute}-${this.inGameSecond}-${this.logType}`;
   }
 
@@ -49,9 +49,9 @@ export default class TribeLog {
     else if (this.inGameDay > other.inGameDay)
       return OccurrenceType.After; // this happened days after
     else // this happened on the same day atleast
-      if (other.inGameHour < other.inGameHour)
+      if (this.inGameHour < other.inGameHour)
         return OccurrenceType.Before; // this happened hours before
-      else if (other.inGameHour > other.inGameHour)
+      else if (this.inGameHour > other.inGameHour)
         return OccurrenceType.After; // this happened hours after
       else
         if (this.inGameMinute < other.inGameMinute)

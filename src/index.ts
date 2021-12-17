@@ -1,5 +1,5 @@
 import TribeLog from "./tribeLog";
-import { divideIntoIndividualLogs, getTimeRelatedInfoFromLogs } from "./util";
+import { splitLogs, getTimeInfoFromLogs } from "./util";
 
 import XRegExp from "xregexp";
 
@@ -7,25 +7,25 @@ export enum LogType {
   Invalid = -2,
   NotSupported = -1,  
   EnemyEntityKilled = 0,
-  StructureDemolishedByEnemy,
+  StructureDestroyedByEnemy,
   DinoStarvedToDeath,
   FriendlyLivingEntityKilled,
   AutoDecayDestroyed
 }
 
 export default function getValidLogsFrom(logText: string): TribeLog[] {
-  const tribeLogs: TribeLog[] = getTimeRelatedInfoFromLogs(
-    divideIntoIndividualLogs(logText)
+  const tribeLogs: TribeLog[] = getTimeInfoFromLogs(
+    splitLogs(logText)
   );
 
   let str = '';
   let currentLog: TribeLog;
   let logType: LogType;
-  // At each index we want get and determine the type of log aka what it means
-  for (let logIndex = 0; logIndex < tribeLogs.length; logIndex++) {
-    currentLog = tribeLogs[logIndex];
+  // At each TribeLog we want get and determine the type of log aka what it means
+  for (const log of tribeLogs) {
+    currentLog = log;
     str = currentLog.text.trim();
-    let match = XRegExp('(?i)^(your|Vour)').exec(str);
+    let match = XRegExp('(?i)^(.?[YyVv]{1}[0Oo]{1}ur)').exec(str);
     if (match !== null) { // Starts with "your" or "Your" or "Vour"      
       str = str.substring(match[0].length).trimStart();      
       match = XRegExp('(?i)(Tribe Killed)').exec(str);
@@ -36,9 +36,9 @@ export default function getValidLogsFrom(logText: string): TribeLog[] {
         match = XRegExp('(?i)(was destroyed.$)').exec(str);
         if (match !== null) { // Ends with "was destroyed!"
           str = str.substring(0, str.length - match[0].length).trimEnd(); 
-          logType = LogType.StructureDemolishedByEnemy; 
+          logType = LogType.StructureDestroyedByEnemy; 
         } else { // Does not end with "was destroyed!"
-          match = XRegExp('(?i)(starved to death.$)').exec(str);
+          match = XRegExp('(?i)(star?v?ed to dea?th.$)').exec(str);
           if (match !== null) { // Ends with "starved to death!"
             str = str.substring(0, str.length - match[0].length).trimEnd();
             logType = LogType.DinoStarvedToDeath;          
@@ -53,7 +53,6 @@ export default function getValidLogsFrom(logText: string): TribeLog[] {
                 str = str.substring(0, str.length - match[0].length).trimEnd();
                 logType = LogType.AutoDecayDestroyed;
               } else {
-                // console.log(`Your->!was destroyed->!starved to death->!was killed->was auto-decay destroyed: ${str}`);
                 logType = LogType.Invalid;
               }              
             }
@@ -61,7 +60,6 @@ export default function getValidLogsFrom(logText: string): TribeLog[] {
         }
       }    
     } else { // Does not start with "Your"
-      // console.log(`\nLog not supported: ${str}`);
       logType = LogType.NotSupported;
     }
     currentLog.text = str.trim();

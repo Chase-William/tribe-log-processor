@@ -6,8 +6,20 @@ import TribeLog from './tribeLog';
   These small strings usually occur when \n is falsely detected.
 */
 const MIN_CHARACTER_THRESHOLD = 3;
+const DIGIT_ZERO_CODE = 48;
+const DIGIT_NINE_CODE = 57;
+const IN_GAME_DAY_INDEX = 2;
+const IN_GAME_HOUR_DAY_INDEX = 3;
+const IN_GAME_MINUTE_DAY_INDEX = 4;
+const IN_GAME_SECOND_DAY_INDEX = 5;
 
-function getCharToNum(character: string): string {
+/**
+ * Patches a character to the corresponding string representation of the number. Will
+ * return null if the patch fails! Make sure not to pass already valid characters!
+ * @param character To be patched to a string representation of the related number.
+ * @returns Patched version of the given character.
+ */
+function tryPatchCharToNum(character: string): string {
   // OoQIiLlJjBSsZz
   switch (character) {
     case 'O':
@@ -30,20 +42,33 @@ function getCharToNum(character: string): string {
     case 'z': // 2
       return '2';
     default:
-      return character;
-    // throw new Error(
-    //   'Character not support for string to number conversion within patchStringsToNumbers?!?'
-    // );
+      return null;
   }
 }
 
-export default function patchStringsToNumbers(toBeNumber: string): number {
+/**
+ * Patches a given string by replacing letters that are commonly miss-matched with
+ * specific numbers. 
+ * @param characters String that may contain letters that should be numbers.
+ * @returns Number that is the result after possible patching operations.
+ */
+export default function tryPatchStringToNumber(characters: string): number {
+  let character = '';
   let cleaned = '';
-  // TODO create a better implementation... a lot of unnessesary checks in getCharToNum calls...
-  // eslint-disable-next-line no-plusplus
-  for (let charIndex = 0; charIndex < toBeNumber.length; charIndex++) {
-    cleaned += getCharToNum(toBeNumber[charIndex]);
-  }
+  let charCode = -1;
+  for (let charIndex = 0; charIndex < characters.length; charIndex++) {
+    charCode = characters.charCodeAt(charIndex);
+    // Only perform a patch attempt on invalid characters, not within (0 - 9 inclusive)
+    if (charCode < DIGIT_ZERO_CODE || charCode > DIGIT_NINE_CODE)
+    {
+      character = tryPatchCharToNum(characters[charIndex]);
+      if (character === null) // Null indicates a patch failure
+        return null; // This is critical so return immediately
+      cleaned += character;
+    }
+    else
+      cleaned += characters[charIndex];
+  }  
   return parseInt(cleaned, 10);
 }
 
@@ -59,27 +84,49 @@ const date = XRegExp(
   `([Dayv]{3})[^^]{1,5}(?<day>[OoQIiLlJjBSsZz0-9]{5})[^^]{1,2}(?<hour>[OoQIiLlJjBSsZz0-9]{2})[^^]{0,2}(?<minute>[OoQIiLlJjBSsZz0-9]{2})[^^]{0,2}(?<second>[OoQIiLlJjBSsZz0-9]{2})`
 );
 
-export function getTimeRelatedInfoFromLogs(logs: string[]): TribeLog[] {
+/**
+ * Creates TribeLog objects that pass time base validation.
+ * @param logs Log lines that will be processed.
+ * @returns Array of TribeLog objects that passed time related validations.
+ */
+export function getTimeInfoFromLogs(logs: string[]): TribeLog[] {
   const regexLogs: TribeLog[] = [];
   let match: RegExpExecArray;
   let contentString: string;
   // eslint-disable-next-line no-plusplus
   for (let index = 0; index < logs.length; index++) {
-    match = date.exec(logs[index]);
+    match = date.exec(logs[index]); // Match the date    
     if (match?.length === 6) {
+      // Ark log dates are terminated with a colon and a white space ': ', 
+      // hence we can omit it from being saved into the content if it exist
       if (logs[index][match[0].length] === ':') {
-        contentString = logs[index].substring(match[0].length + 1);
+        contentString = logs[index].substring(match[0].length + 2);
       } else {
         contentString = logs[index].substring(match[0].length);
       }
+      // Create new tribe logs and add them to the tribe log array
+      // Also make sure to patch any numbers that got mixed up for letters in the
+      // optical character recognition
+      const inGameDay = tryPatchStringToNumber(match[IN_GAME_DAY_INDEX]);
+      if (inGameDay === null || inGameDay < 0)
+        continue; // Next iteration if day failed to be patched
+      const inGameHour = tryPatchStringToNumber(match[IN_GAME_HOUR_DAY_INDEX]);
+      if (inGameHour === null || inGameHour < 0 || inGameHour > 23)
+        continue; // Next iteration if the hour failed to be patched
+      const inGameMinute = tryPatchStringToNumber(match[IN_GAME_MINUTE_DAY_INDEX]);
+      if (inGameMinute === null || inGameMinute < 0 || inGameMinute > 59)
+        continue; // Next iteration if the minute failed to be patched
+      const inGameSecond = tryPatchStringToNumber(match[IN_GAME_SECOND_DAY_INDEX]);
+      if (inGameSecond === null || inGameSecond < 0 || inGameSecond > 59)
+        continue; // Next iteration if the second failed to patched
 
       regexLogs.push(
         new TribeLog(
           contentString.trim(),
-          patchStringsToNumbers(match[2]),
-          patchStringsToNumbers(match[3]),
-          patchStringsToNumbers(match[4]),
-          patchStringsToNumbers(match[5])
+          inGameDay,
+          inGameHour,
+          inGameMinute,
+          inGameSecond
         )
       );
     } else {
@@ -94,7 +141,7 @@ export function getTimeRelatedInfoFromLogs(logs: string[]): TribeLog[] {
  * @param tribeLogText Input blob of text.
  * @returns Individual lines of text that should be logs.
  */
-export function divideIntoIndividualLogs(tribeLogText: string): string[] {
+export function splitLogs(tribeLogText: string): string[] {
   const clumpOfLogs: string[] = tribeLogText.split('\n');
   const refinedLogs: string[] = [];
   // eslint-disable-next-line no-plusplus
@@ -112,8 +159,8 @@ export function divideIntoIndividualLogs(tribeLogText: string): string[] {
         refinedLogs.push(clumpOfLogs[i]);
       } else {
         // eslint-disable-next-line no-continue
-        if (refinedLogs.length === 0) continue; // No index out of bounds
-        refinedLogs[refinedLogs.length - 1] += clumpOfLogs[i];
+        if (refinedLogs.length != 0) // Prevent index out of bounds
+          refinedLogs[refinedLogs.length - 1] += clumpOfLogs[i];
       }
     }
   }
