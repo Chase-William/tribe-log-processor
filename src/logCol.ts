@@ -12,7 +12,7 @@ export default class LogCollectionManager {
    * Contains all the valid logs up to the length specified in the contructor.
    * The term `valid` means the logs have a timestamp and have a known meaning.
    */
-  #validLogs = new Map<string, TribeLog>();
+  ValidLogs = new Map<string, TribeLog>();
 
   /**
    * Initializes a new instance of the LogCollectionManger class.
@@ -20,8 +20,8 @@ export default class LogCollectionManager {
    * @param maxInvalidLen Max length of the *invalidLogs* collection.
    * @param maxNotSupportedLen Max length of the *notSupportedLogs* collection.
    */
-  constructor(maxValidLen: number, maxInvalidLen: number, maxNotSupportedLen: number) {
-    if (maxValidLen < this.MIN_COL_SIZE || maxInvalidLen < this.MIN_COL_SIZE || maxNotSupportedLen < this.MIN_COL_SIZE) {
+  constructor(maxValidLen: number) {
+    if (maxValidLen < this.MIN_COL_SIZE) {
       throw new Error("A specified length for a collection inside LogCollectionManager was below the min value.");
     }    
   }
@@ -44,7 +44,7 @@ export default class LogCollectionManager {
       log = logs[logIndex];
       if (logs[logIndex].logType > LogType.NotSupported) {
         // Only process this log if it hasn't already been accounted for
-        if (!this.#validLogs.has(log.getTribeLogID())) {
+        if (!this.ValidLogs.has(log.getTribeLogID())) {
           // Check the log's nearbly logs to see if the time of this logic makes sense
           if (this.logFitsTimeContext(log, logIndex, logs))
             this.applyValidLog(log); // Apply
@@ -84,6 +84,6 @@ export default class LogCollectionManager {
    * @param log Log to be added.
    */
   applyValidLog(log: TribeLog): void {    
-    // console.log(log);
+    this.ValidLogs.set(log.getTribeLogID(), log);
   }
 }
