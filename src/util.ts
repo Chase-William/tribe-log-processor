@@ -91,7 +91,7 @@ export default function tryPatchStringToNumber(characters: string): number {
  * '00' Second
  */
 const date = XRegExp(
-  `([Dayv]{3})[^^]{1,5}(?<day>[OoQIiLlJjBSsZz0-9]{5})[^^]{1,2}(?<hour>[OoQIiLlJjBSsZz0-9]{2})[^^]{0,2}(?<minute>[OoQIiLlJjBSsZz0-9]{2})[^^]{0,2}(?<second>[OoQIiLlJjBSsZz0-9]{2})`
+  `([Dayv]{3})[^^]{1,5}(?<day>[OoQIiLlJjBSsZz0-9]{4,5})[^^]{1,2}(?<hour>[OoQIiLlJjBSsZz0-9]{2})[^^]{0,2}(?<minute>[OoQIiLlJjBSsZz0-9]{2})[^^]{0,2}(?<second>[OoQIiLlJjBSsZz0-9]{2})`
 );
 
 /**
@@ -189,11 +189,12 @@ export function logFitsTimeContext(log: TribeLog, index: number, srcCol: TribeLo
   let prev = OccurrenceType.SameTime; // should be 1 or 0
   let next = OccurrenceType.SameTime; // should be -1 or 0
   if (index - 1 > 0) {
-    prev = log.compareDateTo(srcCol[index - 1]);
+    prev = srcCol[index - 1].compareDateTo(log);
   }
   if (index + 1 < srcCol.length) {
-    next = log.compareDateTo(srcCol[index + 1])
-  }    
+    next = srcCol[index + 1].compareDateTo(log)
+  }
+  // console.log(`${log.inGameDay}:${log.inGameHour}:${log.inGameMinute}:${log.inGameSecond} --` + log.text + " | " + `prev: ${prev} next: ${next}`)
   if (
       prev === OccurrenceType.SameTime || // Happened at the sametime as the previous
       next === OccurrenceType.SameTime || // Happened at the sametime as the next
@@ -208,7 +209,6 @@ export function getValidLogsFrom(logText: string): TribeLog[] {
   const tribeLogs: TribeLog[] = getTimeInfoFromLogs(
     splitLogs(logText)
   );
-
   let str = '';
   let currentLog: TribeLog;
   let logType: LogType;
@@ -224,7 +224,7 @@ export function getValidLogsFrom(logText: string): TribeLog[] {
         str = str.substring(match[0].length).trimStart();
         logType = LogType.EnemyEntityKilled; 
       } else { // Starts with matches failed, now try ends with
-        match = XRegExp('(?i)(was  ?destro.ed.$)').exec(str);
+        match = XRegExp('(?i)(was[ _] ?destro.ed.$)').exec(str);
         if (match !== null) { // Ends with "was destroyed!"
           str = str.substring(0, str.length - match[0].length).trimEnd(); 
           logType = LogType.StructureDestroyedByEnemy; 

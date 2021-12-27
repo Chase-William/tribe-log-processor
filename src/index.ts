@@ -48,7 +48,7 @@ export default class LogCollectionManager {
         tribeLogID = log.getTribeLogID();
         if (!this.ValidLogs.has(tribeLogID)) {
           // Check the log's nearbly logs to see if the time of this logic makes sense
-          if (logFitsTimeContext(log, logIndex, logs))
+          if (logFitsTimeContext(log, logIndex, logs))          
             this.ValidLogs.set(tribeLogID, log); // Apply valid log to map
         }
       }
