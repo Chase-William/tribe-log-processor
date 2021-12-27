@@ -224,7 +224,7 @@ export function getValidLogsFrom(logText: string): TribeLog[] {
         str = str.substring(match[0].length).trimStart();
         logType = LogType.EnemyEntityKilled; 
       } else { // Starts with matches failed, now try ends with
-        match = XRegExp('(?i)(was destroyed.$)').exec(str);
+        match = XRegExp('(?i)(was  ?destro.ed.$)').exec(str);
         if (match !== null) { // Ends with "was destroyed!"
           str = str.substring(0, str.length - match[0].length).trimEnd(); 
           logType = LogType.StructureDestroyedByEnemy; 
